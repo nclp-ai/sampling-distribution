@@ -1,0 +1,860 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>神機妙算：中央極限定理 (CLT) 探究實驗室</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --secondary: #06b6d4;
+            --bg-color: #f8fafc;
+            --card-bg: #ffffff;
+            --text-color: #1e293b;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "PingFang HK", "Microsoft JhengHei", sans-serif;
+        }
+
+        .math {
+            font-family: "Cambria Math", "Georgia", "Times New Roman", serif;
+            font-style: italic;
+            padding: 0 2px;
+        }
+
+        .dog-card {
+            width: 64px;
+            height: 85px;
+            background: linear-gradient(135deg, #ffffff, #f1f5f9);
+            border: 2px solid #818cf8;
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1rem;
+            box-shadow: 0 4px 8px rgba(79, 70, 229, 0.12);
+            animation: cardPop 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+        }
+
+        @keyframes cardPop {
+            0% { transform: scale(0.3) translateY(15px); opacity: 0; }
+            100% { transform: scale(1) translateY(0); opacity: 1; }
+        }
+
+        .chip-badge {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-weight: bold;
+            box-shadow: 0 2px 6px rgba(217, 119, 6, 0.3);
+        }
+
+        .achievement-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: #e0e7ff;
+            color: #3730a3;
+            padding: 4px 10px;
+            border-radius: 16px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            border: 1px solid #c7d2fe;
+            transition: all 0.3s ease;
+        }
+
+        .collapsible-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+        }
+
+        canvas {
+            touch-action: none;
+        }
+    </style>
+</head>
+<body class="p-3 md:p-6 min-h-screen">
+
+<div class="max-w-7xl mx-auto space-y-5">
+    <header class="bg-gradient-to-r from-indigo-700 via-indigo-800 to-cyan-700 text-white rounded-2xl p-5 md:p-6 shadow-xl relative overflow-hidden">
+        <div class="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div>
+                <div class="flex items-center gap-2 flex-wrap">
+                    <span class="text-3xl">📐</span>
+                    <h1 class="text-2xl md:text-3xl font-extrabold tracking-tight">中央極限定理 (CLT) 多分佈實驗室</h1>
+                    <span class="bg-cyan-400/30 text-cyan-100 text-xs px-3 py-1 rounded-full border border-cyan-200/40 font-semibold">DSE M1 專題探究</span>
+                </div>
+                <p class="text-indigo-100 mt-1 text-xs md:text-sm">
+                    探究核心：當樣本容量 <span class="math">n ≥ 30</span> 時，無論母體 <span class="math">X</span> 本身服從何種分佈（偏態、泊松、二項），樣本平均值 <span class="math">X̄</span> 均趨向正態分佈 <span class="math">N(μ, σ²/n)</span>。
+                </p>
+            </div>
+            
+            <div class="flex flex-wrap gap-2 text-xs md:text-sm font-semibold">
+                <div class="bg-white/15 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/20">母體均值 <span class="math">μ</span> = <span id="header-pop-mean" class="text-amber-300 font-bold">1.500</span></div>
+                <div class="bg-white/15 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/20">母體方差 <span class="math">σ²</span> = <span id="header-pop-var" class="text-amber-300 font-bold">0.1067</span></div>
+            </div>
+        </div>
+    </header>
+
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        <!-- 左側控制區 (5 cols) -->
+        <div class="lg:col-span-5 space-y-5">
+            
+            <!-- 母體分佈選擇卡片 -->
+            <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 space-y-4">
+                <h2 class="text-base font-bold text-indigo-900 flex items-center gap-2">
+                    <span>🧪</span> 1. 選擇母體分佈 <span class="math">X</span>
+                </h2>
+
+                <div class="space-y-3">
+                    <div>
+                        <label for="population-select" class="block text-xs font-bold text-slate-600 mb-1">母體概率模型：</label>
+                        <select id="population-select" onchange="changePopulation()" class="w-full bg-slate-50 border border-slate-300 font-bold text-indigo-800 py-2 px-3 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm">
+                            <option value="dog" selected>🐶 狗狗體重 (活動13.1 離散三值, μ=1.5, σ²=0.1067)</option>
+                            <option value="poisson">🐟 泊松分佈 Poi(λ = 3) [強右偏離散, μ=3, σ²=3]</option>
+                            <option value="binomial">🎯 二項分佈 Bin(n=10, p=0.2) [不對稱離散, μ=2, σ²=1.6]</option>
+                            <option value="exponential">⚡ 指數分佈 Exp(λ = 1) [連續右偏斜, μ=1, σ²=1]</option>
+                        </select>
+                    </div>
+
+                    <!-- 母體原分佈微型展示圖 -->
+                    <div class="bg-slate-50 rounded-xl p-3 border border-slate-200 space-y-1">
+                        <div class="flex justify-between items-center text-xs font-bold text-slate-700">
+                            <span>母體分佈 <span class="math">P(X = x)</span> 視覺預覽：</span>
+                            <span id="pop-skew-tag" class="text-indigo-600 text-[11px] bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200">偏態母體</span>
+                        </div>
+                        <canvas id="pop-preview-canvas" class="w-full h-[90px] block rounded bg-white border border-slate-200"></canvas>
+                        <p id="pop-desc-text" class="text-[11px] text-slate-500 leading-tight">活動 13.1 原母體：包含三個相同概率的體重值 {1.1, 1.5, 1.9} kg。</p>
+                    </div>
+                </div>
+
+                <!-- 賭神競猜與樣本容量選取 -->
+                <div class="pt-2 border-t border-slate-100 space-y-3">
+                    <div class="flex justify-between items-center">
+                        <h3 class="text-sm font-bold text-indigo-900 flex items-center gap-1.5">
+                            <span>🎰</span> 2. 抽樣設定與賭神競猜
+                        </h3>
+                        <div class="chip-badge" id="chips-display">💰 籌碼: 100</div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2">
+                        <button id="bet-equal" onclick="selectBet('equal')" class="py-2 px-3 rounded-lg border-2 border-indigo-600 bg-indigo-100 text-indigo-900 font-bold text-xs transition-all hover:bg-indigo-200">
+                            <span class="math">x̄</span> 恰好等於 <span id="target-mean-text">1.50</span><br><span class="text-[10px] text-indigo-600 font-normal">(賠率 1:2)</span>
+                        </button>
+                        <button id="bet-not-equal" onclick="selectBet('not-equal')" class="py-2 px-3 rounded-lg border-2 border-slate-200 bg-white text-slate-700 font-bold text-xs transition-all hover:bg-slate-50">
+                            <span class="math">x̄</span> 不等於 <span id="target-mean-text-2">1.50</span><br><span class="text-[10px] text-slate-500 font-normal">(賠率 1:1)</span>
+                        </button>
+                    </div>
+
+                    <div class="flex items-center justify-between bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+                        <label for="sample-size-select" class="font-bold text-slate-700 text-xs md:text-sm flex items-center gap-1">
+                            <span>📏</span> 樣本容量 (<span class="math">n</span>)：
+                        </label>
+                        <select id="sample-size-select" onchange="changeSampleSize()" class="bg-white border border-slate-300 font-bold text-indigo-700 py-1 px-2.5 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 text-xs md:text-sm">
+                            <option value="2" selected>n = 2 (小樣本)</option>
+                            <option value="3">n = 3 (小樣本)</option>
+                            <option value="5">n = 5 (小樣本)</option>
+                            <option value="10">n = 10 (中等樣本)</option>
+                            <option value="30">n = 30 ⭐ (大樣本 CLT標準)</option>
+                            <option value="50">n = 50 ⭐ (大樣本 CLT極限)</option>
+                            <option value="100">n = 100 ⭐ (特大樣本)</option>
+                        </select>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2">
+                        <button onclick="runSampling(1)" class="bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white font-bold py-2 px-3 rounded-xl shadow-md transition-all text-xs md:text-sm flex items-center justify-center gap-1">
+                            🎲 抽樣 1 次 (下注)
+                        </button>
+                        <button onclick="runSampling(10)" class="bg-cyan-600 hover:bg-cyan-700 active:scale-95 text-white font-bold py-2 px-3 rounded-xl shadow-md transition-all text-xs md:text-sm flex items-center justify-center gap-1">
+                            ⚡ 快速抽樣 10 次
+                        </button>
+                        <button onclick="runSampling(100)" class="bg-teal-600 hover:bg-teal-700 active:scale-95 text-white font-bold py-2 px-3 rounded-xl shadow-md transition-all text-xs md:text-sm flex items-center justify-center gap-1">
+                            🚀 快速抽樣 100 次
+                        </button>
+                        <button onclick="runSampling(1000)" class="bg-purple-600 hover:bg-purple-700 active:scale-95 text-white font-bold py-2 px-3 rounded-xl shadow-md transition-all text-xs md:text-sm flex items-center justify-center gap-1">
+                            💥 極速 1000 次
+                        </button>
+                    </div>
+
+                    <div class="flex justify-between items-center text-xs text-slate-500 pt-1">
+                        <button onclick="resetData()" class="text-rose-600 hover:underline font-semibold flex items-center gap-1">
+                            🔄 清除抽樣紀錄
+                        </button>
+                        <label class="flex items-center gap-1 cursor-pointer select-none">
+                            <input type="checkbox" id="sound-toggle" checked class="rounded text-indigo-600 focus:ring-indigo-500">
+                            <span>🔊 Web Audio 音效</span>
+                        </label>
+                    </div>
+
+                    <!-- 抽牌與單次結果展示區 -->
+                    <div class="bg-slate-100/90 rounded-xl p-3 flex flex-col items-center justify-center min-h-[120px] border border-slate-200">
+                        <div id="cards-box" class="flex flex-wrap justify-center gap-1.5 mb-2 max-h-[140px] overflow-y-auto p-1">
+                            <span class="text-slate-400 text-xs font-medium">點擊「抽樣 1 次」顯示隨機觀察值</span>
+                        </div>
+                        <div id="sample-result-text" class="text-sm font-bold text-slate-800 text-center">---</div>
+                        <div id="bet-feedback" class="text-xs font-bold mt-1 text-center min-h-[16px]"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 成就徽章區 -->
+            <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200 space-y-2">
+                <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                    🏆 CLT 探究成就徽章
+                </h3>
+                <div id="achievements-box" class="flex flex-wrap gap-1.5">
+                    <span class="achievement-badge opacity-40" id="badge-first">🌱 初次體驗</span>
+                    <span class="achievement-badge opacity-40" id="badge-100">🔥 100次大數據</span>
+                    <span class="achievement-badge opacity-40" id="badge-clt">📐 CLT 大樣本證明(n≥30)</span>
+                    <span class="achievement-badge opacity-40" id="badge-poisson">🐟 泊松平滑化大師</span>
+                    <span class="achievement-badge opacity-40" id="badge-rich">💰 賭神附體 (>200分)</span>
+                </div>
+            </div>
+
+            <!-- DSE M1 觀念解讀區 -->
+            <div class="bg-indigo-50/60 rounded-2xl p-4 border border-indigo-100 space-y-2">
+                <h3 class="text-sm font-bold text-indigo-900 flex items-center gap-1.5">
+                    💡 DSE M1 中央極限定理 (CLT) 考點精要
+                </h3>
+                <ul class="text-xs space-y-1.5 text-slate-700 list-disc pl-4 leading-relaxed">
+                    <li><b>中央極限定理 (CLT) 原理：</b> 設 <span class="math">X₁, X₂, ..., Xₙ</span> 為獨立同分佈 (i.i.d.) 隨機變量，均值為 <span class="math">μ</span>，方差為 <span class="math">σ²</span>。當 <span class="math">n</span> 相當大（通常 <span class="math">n ≥ 30</span>）時，無論 <span class="math">X</span> 原分佈為何，<span class="math">X̄ ~ N(μ, σ²/n)</span> 近似成立。</li>
+                    <li><b>泊松與二項分佈實驗：</b> 請切換母體至<b>泊松分佈</b>或<b>二項分佈</b>，觀察當 <span class="math">n = 2</span> 時（極度右偏/不對稱）與當 <span class="math">n = 30</span> 時直方圖形狀的對比！</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- 右側直方圖與正態擬合曲線區 (7 cols) -->
+        <div class="lg:col-span-7 space-y-5">
+            
+            <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 space-y-4">
+                <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-2">
+                    <div>
+                        <h2 class="text-lg font-bold text-indigo-900 flex items-center gap-2">
+                            <span>📊</span> 樣本平均值 <span class="math">X̄</span> 抽樣分佈與正態擬合
+                        </h2>
+                        <p class="text-xs text-slate-500">累積抽樣次數：<b id="total-draws-count" class="text-indigo-600 font-bold text-sm">0</b> 次</p>
+                    </div>
+                    
+                    <div class="flex items-center gap-3">
+                        <label class="flex items-center gap-1.5 text-xs font-semibold text-slate-700 cursor-pointer">
+                            <input type="checkbox" id="toggle-normal-curve" checked onchange="updateChartAndStats()" class="rounded text-indigo-600 focus:ring-indigo-500">
+                            <span>顯示理論正態曲線 <span class="math">N(μ, σ²/n)</span></span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Canvas 直方圖與正態擬合圖表 -->
+                <div class="relative w-full bg-slate-50 rounded-xl border border-slate-200 p-2 overflow-hidden">
+                    <canvas id="distribution-canvas" class="w-full h-[300px] block"></canvas>
+                </div>
+
+                <!-- 統計數據對照表 -->
+                <div class="overflow-x-auto">
+                    <table class="w-full text-xs md:text-sm text-left text-slate-600 border-collapse">
+                        <thead>
+                            <tr class="bg-slate-100 text-slate-700 font-bold">
+                                <th class="p-2.5 rounded-l-lg">統計量</th>
+                                <th class="p-2.5">實測值 (累積 <span id="sample-count-label">0</span> 次)</th>
+                                <th class="p-2.5 rounded-r-lg">理論公式值</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            <tr>
+                                <td class="p-2.5 font-medium">均值 <span class="math">E(X̄)</span></td>
+                                <td class="p-2.5 font-bold text-indigo-600 text-base" id="obs-mean">--</td>
+                                <td class="p-2.5 font-bold text-slate-800"><span class="math">μ</span> = <b id="theory-mean-text">1.5000</b></td>
+                            </tr>
+                            <tr>
+                                <td class="p-2.5 font-medium">方差 <span class="math">Var(X̄)</span></td>
+                                <td class="p-2.5 font-bold text-indigo-600 text-base" id="obs-var">--</td>
+                                <td class="p-2.5 font-bold text-slate-800"><span class="math">σ²/n</span> = <b id="theory-var-text">0.0533</b></td>
+                            </tr>
+                            <tr>
+                                <td class="p-2.5 font-medium">標準誤 <span class="math">SE(X̄)</span></td>
+                                <td class="p-2.5 font-bold text-indigo-600 text-base" id="obs-sd">--</td>
+                                <td class="p-2.5 font-bold text-slate-800"><span class="math">σ/√n</span> = <b id="theory-sd-text">0.2309</b></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- 全班數據匯入匯出區 -->
+                <div class="flex flex-wrap justify-between items-center pt-2 border-t border-slate-100 text-xs">
+                    <span class="text-slate-500">課堂互動：導出 CSV 數據以匯集全班實驗結果</span>
+                    <button onclick="exportCSV()" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-lg transition-colors flex items-center gap-1">
+                        📥 導出 CSV 數據
+                    </button>
+                </div>
+            </div>
+
+            <!-- 可折疊理論表格 (狗狗體重 n=2 特例) -->
+            <div id="theory-collapsible-card" class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                <button onclick="toggleTheory()" class="w-full p-4 text-left font-bold text-slate-800 hover:bg-slate-50 flex justify-between items-center transition-colors">
+                    <span class="flex items-center gap-2 text-xs md:text-sm">
+                        <span>📖</span> 查看理論分佈對照表 (狗狗體重 <span class="math">n = 2</span> 所有 9 種可能組合)
+                    </span>
+                    <span id="theory-toggle-icon" class="text-indigo-600 text-base">➕</span>
+                </button>
+                
+                <div id="theory-content" class="collapsible-content border-t border-slate-100 p-4 bg-slate-50/50">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-xs text-center border-collapse bg-white rounded-lg overflow-hidden border border-slate-200">
+                            <thead>
+                                <tr class="bg-slate-100 font-bold text-slate-700">
+                                    <th class="p-2 border">第1次 <span class="math">x₁</span></th>
+                                    <th class="p-2 border">第2次 <span class="math">x₂</span></th>
+                                    <th class="p-2 border">樣本平均 <span class="math">x̄</span></th>
+                                    <th class="p-2 border">概率 <span class="math">P(X̄ = x̄)</span></th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-200 text-slate-600">
+                                <tr><td class="p-1.5 border">1.1</td><td class="p-1.5 border">1.1</td><td class="p-1.5 border font-bold text-indigo-600">1.10</td><td class="p-1.5 border">1/9 (≈ 0.1111)</td></tr>
+                                <tr><td class="p-1.5 border">1.1</td><td class="p-1.5 border">1.5</td><td class="p-1.5 border font-bold text-indigo-600" rowspan="2">1.30</td><td class="p-1.5 border" rowspan="2">2/9 (≈ 0.2222)</td></tr>
+                                <tr><td class="p-1.5 border">1.5</td><td class="p-1.5 border">1.1</td></tr>
+                                <tr><td class="p-1.5 border">1.1</td><td class="p-1.5 border">1.9</td><td class="p-1.5 border font-bold text-indigo-600" rowspan="3">1.50</td><td class="p-1.5 border" rowspan="3">3/9 (≈ 0.3333)</td></tr>
+                                <tr><td class="p-1.5 border">1.5</td><td class="p-1.5 border">1.5</td></tr>
+                                <tr><td class="p-1.5 border">1.9</td><td class="p-1.5 border">1.1</td></tr>
+                                <tr><td class="p-1.5 border">1.5</td><td class="p-1.5 border">1.9</td><td class="p-1.5 border font-bold text-indigo-600" rowspan="2">1.70</td><td class="p-1.5 border" rowspan="2">2/9 (≈ 0.2222)</td></tr>
+                                <tr><td class="p-1.5 border">1.9</td><td class="p-1.5 border">1.5</td></tr>
+                                <tr><td class="p-1.5 border">1.9</td><td class="p-1.5 border">1.9</td><td class="p-1.5 border font-bold text-indigo-600">1.90</td><td class="p-1.5 border">1/9 (≈ 0.1111)</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script>
+    // 母體定義數據
+    const populations = {
+        dog: {
+            name: "狗狗體重 (活動13.1)",
+            mean: 1.5,
+            var: 0.32 / 3, // ~0.1066667
+            skewTag: "對稱離散 (離散三值)",
+            desc: "活動 13.1 原母體：包含三個相同概率的體重值 {1.1, 1.5, 1.9} kg。",
+            sampleOne: () => [1.1, 1.5, 1.9][Math.floor(Math.random() * 3)],
+            getPMF: () => [{x: 1.1, p: 1/3}, {x: 1.5, p: 1/3}, {x: 1.9, p: 1/3}],
+            range: [0.8, 2.2]
+        },
+        poisson: {
+            name: "泊松分佈 Poi(λ = 3)",
+            mean: 3.0,
+            var: 3.0,
+            skewTag: "明顯右偏離散 (λ=3)",
+            desc: "泊松分佈代表單位時間內隨機事件發生次數。母體呈現右偏（左高右低）。",
+            sampleOne: () => {
+                // Knuth's algorithm for Poisson random variables
+                let L = Math.exp(-3);
+                let k = 0;
+                let p = 1;
+                do {
+                    k++;
+                    p *= Math.random();
+                } while (p > L);
+                return k - 1;
+            },
+            getPMF: () => {
+                let pmf = [];
+                let lambda = 3;
+                let fact = 1;
+                for (let k = 0; k <= 10; k++) {
+                    if (k > 0) fact *= k;
+                    let p = Math.pow(lambda, k) * Math.exp(-lambda) / fact;
+                    pmf.push({x: k, p: p});
+                }
+                return pmf;
+            },
+            range: [0, 8]
+        },
+        binomial: {
+            name: "二項分佈 Bin(n=10, p=0.2)",
+            mean: 2.0,
+            var: 1.6, // 10 * 0.2 * 0.8
+            skewTag: "不對稱右偏 (p=0.2)",
+            desc: "二項分佈代表 10 次獨立試驗中成功的次數（成功率 20%），母體非正態。",
+            sampleOne: () => {
+                let successes = 0;
+                for (let i = 0; i < 10; i++) {
+                    if (Math.random() < 0.2) successes++;
+                }
+                return successes;
+            },
+            getPMF: () => {
+                function nCr(n, r) {
+                    if (r < 0 || r > n) return 0;
+                    if (r === 0 || r === n) return 1;
+                    let res = 1;
+                    for (let i = 1; i <= r; i++) res = res * (n - i + 1) / i;
+                    return res;
+                }
+                let pmf = [];
+                for (let k = 0; k <= 8; k++) {
+                    let p = nCr(10, k) * Math.pow(0.2, k) * Math.pow(0.8, 10 - k);
+                    pmf.push({x: k, p: p});
+                }
+                return pmf;
+            },
+            range: [0, 6]
+        },
+        exponential: {
+            name: "指數分佈 Exp(λ = 1)",
+            mean: 1.0,
+            var: 1.0,
+            skewTag: "極端右偏連續 (Exp)",
+            desc: "指數分佈是典型的連續非正態分佈，概率密度隨 X 增大呈指數衰減。",
+            sampleOne: () => {
+                return -Math.log(1 - Math.random()); // Inverse transform method
+            },
+            getPMF: () => {
+                let pmf = [];
+                for (let x = 0; x <= 5; x += 0.25) {
+                    let p = Math.exp(-x);
+                    pmf.push({x: x, p: p});
+                }
+                return pmf;
+            },
+            range: [0, 4]
+        }
+    };
+
+    let currentPopKey = 'dog';
+    let sampleSize = 2;
+    let chips = 100;
+    let selectedBet = 'equal';
+    let sampleMeansHistory = [];
+    let audioCtx = null;
+
+    function initAudio() {
+        if (!audioCtx && document.getElementById('sound-toggle').checked) {
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            if (AudioContext) audioCtx = new AudioContext();
+        }
+    }
+
+    function playSound(type) {
+        if (!document.getElementById('sound-toggle').checked) return;
+        initAudio();
+        if (!audioCtx) return;
+
+        try {
+            const now = audioCtx.currentTime;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            if (type === 'deal') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(440, now);
+                osc.frequency.exponentialRampToValueAtTime(880, now + 0.08);
+                gain.gain.setValueAtTime(0.12, now);
+                gain.gain.linearRampToValueAtTime(0.01, now + 0.08);
+                osc.start(now);
+                osc.stop(now + 0.08);
+            } else if (type === 'win') {
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(523.25, now);
+                osc.frequency.setValueAtTime(659.25, now + 0.1);
+                osc.frequency.setValueAtTime(783.99, now + 0.2);
+                gain.gain.setValueAtTime(0.18, now);
+                gain.gain.linearRampToValueAtTime(0.01, now + 0.35);
+                osc.start(now);
+                osc.stop(now + 0.35);
+            } else if (type === 'lose') {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(280, now);
+                osc.frequency.linearRampToValueAtTime(140, now + 0.2);
+                gain.gain.setValueAtTime(0.15, now);
+                gain.gain.linearRampToValueAtTime(0.01, now + 0.2);
+                osc.start(now);
+                osc.stop(now + 0.2);
+            } else if (type === 'batch') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(550, now);
+                osc.frequency.exponentialRampToValueAtTime(1100, now + 0.12);
+                gain.gain.setValueAtTime(0.08, now);
+                gain.gain.linearRampToValueAtTime(0.01, now + 0.12);
+                osc.start(now);
+                osc.stop(now + 0.12);
+            }
+        } catch (e) {
+            console.error("Audio error:", e);
+        }
+    }
+
+    function changePopulation() {
+        currentPopKey = document.getElementById('population-select').value;
+        const pop = populations[currentPopKey];
+
+        // 更新頂部母體參數
+        document.getElementById('header-pop-mean').innerText = pop.mean.toFixed(3);
+        document.getElementById('header-pop-var').innerText = pop.var.toFixed(4);
+        document.getElementById('pop-skew-tag').innerText = pop.skewTag;
+        document.getElementById('pop-desc-text').innerText = pop.desc;
+
+        // 更新競猜目標值
+        document.getElementById('target-mean-text').innerText = pop.mean.toFixed(2);
+        document.getElementById('target-mean-text-2').innerText = pop.mean.toFixed(2);
+
+        // 控制理論折疊卡片僅在狗狗體重顯示
+        const collapsibleCard = document.getElementById('theory-collapsible-card');
+        if (currentPopKey === 'dog') {
+            collapsibleCard.style.display = 'block';
+        } else {
+            collapsibleCard.style.display = 'none';
+        }
+
+        if (currentPopKey === 'poisson') {
+            document.getElementById('badge-poisson').classList.remove('opacity-40');
+        }
+
+        drawPopulationPreview();
+        resetData();
+    }
+
+    function changeSampleSize() {
+        sampleSize = parseInt(document.getElementById('sample-size-select').value);
+        if (sampleSize >= 30) {
+            document.getElementById('badge-clt').classList.remove('opacity-40');
+        }
+        resetData();
+    }
+
+    function selectBet(type) {
+        selectedBet = type;
+        const equalBtn = document.getElementById('bet-equal');
+        const notEqualBtn = document.getElementById('bet-not-equal');
+
+        if (type === 'equal') {
+            equalBtn.className = 'py-2 px-3 rounded-lg border-2 border-indigo-600 bg-indigo-100 text-indigo-900 font-bold text-xs transition-all hover:bg-indigo-200';
+            notEqualBtn.className = 'py-2 px-3 rounded-lg border-2 border-slate-200 bg-white text-slate-700 font-bold text-xs transition-all hover:bg-slate-50';
+        } else {
+            notEqualBtn.className = 'py-2 px-3 rounded-lg border-2 border-indigo-600 bg-indigo-100 text-indigo-900 font-bold text-xs transition-all hover:bg-indigo-200';
+            equalBtn.className = 'py-2 px-3 rounded-lg border-2 border-slate-200 bg-white text-slate-700 font-bold text-xs transition-all hover:bg-slate-50';
+        }
+    }
+
+    // 繪製母體原分佈預覽圖
+    function drawPopulationPreview() {
+        const canvas = document.getElementById('pop-preview-canvas');
+        const ctx = canvas.getContext('2d');
+        const rect = canvas.getBoundingClientRect();
+        canvas.width = rect.width * window.devicePixelRatio;
+        canvas.height = rect.height * window.devicePixelRatio;
+        ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+
+        const w = rect.width;
+        const h = rect.height;
+        ctx.clearRect(0, 0, w, h);
+
+        const pop = populations[currentPopKey];
+        const pmf = pop.getPMF();
+
+        const maxP = Math.max(...pmf.map(item => item.p));
+        const padding = 20;
+        const chartW = w - padding * 2;
+        const chartH = h - padding * 2;
+
+        ctx.fillStyle = '#6366f1';
+        ctx.strokeStyle = '#4338ca';
+        ctx.lineWidth = 1.5;
+
+        pmf.forEach((item, idx) => {
+            const barWidth = Math.min(18, (chartW / pmf.length) * 0.6);
+            const x = padding + (idx / (pmf.length - 1 || 1)) * (chartW - barWidth);
+            const barH = (item.p / maxP) * (chartH - 10);
+            const y = h - padding - barH;
+
+            ctx.fillRect(x, y, barWidth, barH);
+
+            // 標籤
+            ctx.fillStyle = '#64748b';
+            ctx.font = '9px sans-serif';
+            ctx.textAlign = 'center';
+            if (pmf.length <= 12 || idx % 2 === 0) {
+                ctx.fillText(typeof item.x === 'number' ? item.x.toFixed(1) : item.x, x + barWidth/2, h - 5);
+            }
+            ctx.fillStyle = '#6366f1';
+        });
+    }
+
+    function runSampling(times) {
+        const pop = populations[currentPopKey];
+        let lastResult = null;
+
+        for (let i = 0; i < times; i++) {
+            let sample = [];
+            let sum = 0;
+            for (let j = 0; j < sampleSize; j++) {
+                let val = pop.sampleOne();
+                sample.push(val);
+                sum += val;
+            }
+            let mean = sum / sampleSize;
+            sampleMeansHistory.push(mean);
+            lastResult = { sample, mean };
+        }
+
+        if (sampleMeansHistory.length >= 1) document.getElementById('badge-first').classList.remove('opacity-40');
+        if (sampleMeansHistory.length >= 100) document.getElementById('badge-100').classList.remove('opacity-40');
+
+        if (times === 1 && lastResult) {
+            playSound('deal');
+            updateChipsAndFeedback(lastResult.mean, pop.mean);
+            renderCards(lastResult.sample);
+            document.getElementById('sample-result-text').innerHTML = `本次樣本平均值 <span class="math">x̄</span> = <b class="text-indigo-600 text-base md:text-lg">${lastResult.mean.toFixed(3)}</b>`;
+        } else {
+            playSound('batch');
+            document.getElementById('cards-box').innerHTML = `<div class="text-indigo-600 font-bold py-2 text-xs md:text-sm">⚡ 已成功快速完成 ${times} 次隨機抽樣！</div>`;
+            document.getElementById('sample-result-text').innerText = `最近一次樣本平均值 x̄ = ${lastResult.mean.toFixed(3)}`;
+            document.getElementById('bet-feedback').innerText = `批次抽樣完成，直方圖與統計數據已更新。`;
+            document.getElementById('bet-feedback').className = "text-xs font-bold mt-1 text-slate-600 text-center";
+        }
+
+        updateChartAndStats();
+    }
+
+    function updateChipsAndFeedback(mean, popMean) {
+        const isEqual = Math.abs(mean - popMean) < 0.15;
+        let win = false;
+        let reward = 0;
+
+        if (selectedBet === 'equal' && isEqual) {
+            win = true;
+            reward = 20;
+        } else if (selectedBet === 'not-equal' && !isEqual) {
+            win = true;
+            reward = 10;
+        } else {
+            win = false;
+            reward = -10;
+        }
+
+        chips += reward;
+        document.getElementById('chips-display').innerText = `💰 籌碼: ${chips}`;
+
+        if (chips >= 200) {
+            document.getElementById('badge-rich').classList.remove('opacity-40');
+        }
+
+        const feedbackEl = document.getElementById('bet-feedback');
+        if (win) {
+            playSound('win');
+            feedbackEl.innerText = `🎉 猜對了！籌碼 +${reward} 分`;
+            feedbackEl.className = "text-xs font-bold mt-1 text-emerald-600 text-center animate-bounce";
+        } else {
+            playSound('lose');
+            feedbackEl.innerText = `❌ 猜錯了！籌碼 ${reward} 分`;
+            feedbackEl.className = "text-xs font-bold mt-1 text-rose-600 text-center";
+        }
+    }
+
+    function renderCards(sample) {
+        const container = document.getElementById('cards-box');
+        container.innerHTML = '';
+        sample.forEach((val, idx) => {
+            const card = document.createElement('div');
+            card.className = 'dog-card';
+            let icon = '🎲';
+            if (currentPopKey === 'dog') icon = val === 1.1 ? '🐩' : (val === 1.5 ? '🐕' : '🦮');
+            else if (currentPopKey === 'poisson') icon = '🐟';
+            else if (currentPopKey === 'binomial') icon = '🎯';
+            else if (currentPopKey === 'exponential') icon = '⚡';
+
+            card.innerHTML = `
+                <span class="text-xs">${icon}</span>
+                <span>${typeof val === 'number' ? val.toFixed(1) : val}</span>
+                <span class="text-[9px] text-slate-400 font-normal"><span class="math">X</span><sub>${idx+1}</sub></span>
+            `;
+            container.appendChild(card);
+        });
+    }
+
+    function updateChartAndStats() {
+        const totalDraws = sampleMeansHistory.length;
+        document.getElementById('total-draws-count').innerText = totalDraws;
+        document.getElementById('sample-count-label').innerText = totalDraws;
+
+        const pop = populations[currentPopKey];
+        const theoryMean = pop.mean;
+        const theoryVar = pop.var / sampleSize;
+        const theorySd = Math.sqrt(theoryVar);
+
+        document.getElementById('theory-mean-text').innerText = theoryMean.toFixed(4);
+        document.getElementById('theory-var-text').innerText = theoryVar.toFixed(4);
+        document.getElementById('theory-sd-text').innerText = theorySd.toFixed(4);
+
+        const canvas = document.getElementById('distribution-canvas');
+        const ctx = canvas.getContext('2d');
+        const rect = canvas.getBoundingClientRect();
+        canvas.width = rect.width * window.devicePixelRatio;
+        canvas.height = rect.height * window.devicePixelRatio;
+        ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+
+        const width = rect.width;
+        const height = rect.height;
+        const padding = { top: 30, right: 30, bottom: 40, left: 45 };
+
+        ctx.clearRect(0, 0, width, height);
+
+        // 動態計算 X 軸繪圖範圍 ( centered at theoryMean )
+        const minX = Math.max(0, theoryMean - 3.5 * Math.max(theorySd, 0.3));
+        const maxX = theoryMean + 3.5 * Math.max(theorySd, 0.3);
+        const numBins = 28;
+        const binWidthVal = (maxX - minX) / numBins;
+
+        // 統計每個 bin 的計數
+        let bins = new Array(numBins).fill(0);
+        sampleMeansHistory.forEach(val => {
+            let binIdx = Math.floor((val - minX) / binWidthVal);
+            if (binIdx >= 0 && binIdx < numBins) {
+                bins[binIdx]++;
+            }
+        });
+
+        const maxBinCount = Math.max(...bins, 1);
+        const chartW = width - padding.left - padding.right;
+        const chartH = height - padding.top - padding.bottom;
+
+        // 畫坐標軸
+        ctx.beginPath();
+        ctx.strokeStyle = '#cbd5e1';
+        ctx.lineWidth = 1;
+        ctx.moveTo(padding.left, padding.top);
+        ctx.lineTo(padding.left, height - padding.bottom);
+        ctx.lineTo(width - padding.right, height - padding.bottom);
+        ctx.stroke();
+
+        // 繪製直方圖
+        const barWidthPx = chartW / numBins;
+        bins.forEach((count, idx) => {
+            const barH = (count / maxBinCount) * (chartH - 20);
+            const x = padding.left + idx * barWidthPx;
+            const y = height - padding.bottom - barH;
+
+            const gradient = ctx.createLinearGradient(0, y, 0, height - padding.bottom);
+            gradient.addColorStop(0, '#6366f1');
+            gradient.addColorStop(1, '#818cf8');
+
+            ctx.fillStyle = gradient;
+            ctx.fillRect(x + 0.5, y, Math.max(1, barWidthPx - 1), barH);
+        });
+
+        // X 軸刻度
+        ctx.fillStyle = '#64748b';
+        ctx.font = '10px sans-serif';
+        ctx.textAlign = 'center';
+        for (let i = 0; i <= 6; i++) {
+            const val = minX + (i / 6) * (maxX - minX);
+            const x = padding.left + (i / 6) * chartW;
+            ctx.fillText(val.toFixed(2), x, height - padding.bottom + 18);
+        }
+
+        // 繪製理論正態擬合曲線 N(μ, σ²/n)
+        const showNormalCurve = document.getElementById('toggle-normal-curve').checked;
+        if (showNormalCurve) {
+            ctx.beginPath();
+            ctx.strokeStyle = '#ef4444'; // 紅色 CLT 正態曲線
+            ctx.lineWidth = 2.5;
+
+            for (let px = 0; px <= chartW; px += 2) {
+                const xVal = minX + (px / chartW) * (maxX - minX);
+                const pdf = (1 / (theorySd * Math.sqrt(2 * Math.PI))) * Math.exp(-0.5 * Math.pow((xVal - theoryMean) / theorySd, 2));
+                const maxPdf = (1 / (theorySd * Math.sqrt(2 * Math.PI)));
+                
+                const py = height - padding.bottom - (pdf / maxPdf) * (chartH - 20);
+
+                if (px === 0) ctx.moveTo(padding.left + px, py);
+                else ctx.lineTo(padding.left + px, py);
+            }
+            ctx.stroke();
+
+            ctx.fillStyle = '#ef4444';
+            ctx.font = 'bold 11px sans-serif';
+            ctx.textAlign = 'right';
+            ctx.fillText(`CLT 正態曲線 N(${theoryMean.toFixed(2)}, ${theoryVar.toFixed(4)})`, width - padding.right, padding.top - 10);
+        }
+
+        // 更新實測統計值
+        if (totalDraws > 0) {
+            let sum = sampleMeansHistory.reduce((a, b) => a + b, 0);
+            let obsMean = sum / totalDraws;
+            let varSum = sampleMeansHistory.reduce((a, b) => a + Math.pow(b - obsMean, 2), 0);
+            let obsVar = totalDraws > 1 ? varSum / totalDraws : 0;
+            let obsSd = Math.sqrt(obsVar);
+
+            document.getElementById('obs-mean').innerText = obsMean.toFixed(4);
+            document.getElementById('obs-var').innerText = obsVar.toFixed(4);
+            document.getElementById('obs-sd').innerText = obsSd.toFixed(4);
+        } else {
+            document.getElementById('obs-mean').innerText = '--';
+            document.getElementById('obs-var').innerText = '--';
+            document.getElementById('obs-sd').innerText = '--';
+        }
+    }
+
+    function resetData() {
+        sampleMeansHistory = [];
+        document.getElementById('cards-box').innerHTML = '<span class="text-slate-400 text-xs font-medium">點擊「抽樣 1 次」顯示隨機觀察值</span>';
+        document.getElementById('sample-result-text').innerText = '---';
+        document.getElementById('bet-feedback').innerText = '';
+        updateChartAndStats();
+    }
+
+    function toggleTheory() {
+        const content = document.getElementById('theory-content');
+        const icon = document.getElementById('theory-toggle-icon');
+        if (content.style.maxHeight) {
+            content.style.maxHeight = null;
+            icon.innerText = '➕';
+        } else {
+            content.style.maxHeight = content.scrollHeight + "px";
+            icon.innerText = '➖';
+        }
+    }
+
+    function exportCSV() {
+        if (sampleMeansHistory.length === 0) {
+            alert('尚無抽樣數據可導出！請先進行抽樣。');
+            return;
+        }
+        let csvContent = "data:text/csv;charset=utf-8,Draw_Index,Population_Type,Sample_Size_n,Sample_Mean_Xbar\n";
+        sampleMeansHistory.forEach((val, idx) => {
+            csvContent += `${idx + 1},${currentPopKey},${sampleSize},${val.toFixed(4)}\n`;
+        });
+
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", `clt_${currentPopKey}_n${sampleSize}_data.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
+    window.addEventListener('resize', () => {
+        drawPopulationPreview();
+        updateChartAndStats();
+    });
+
+    window.onload = function() {
+        drawPopulationPreview();
+        updateChartAndStats();
+    };
+</script>
+</body>
+</html>
