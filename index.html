@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>神機妙算：狗狗體重抽樣大決戰 (M1 課堂活動 13.1)</title>
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --secondary: #06b6d4;
+            --bg-color: #f8fafc;
+            --card-bg: #ffffff;
+            --text-color: #1e293b;
+            --accent-green: #10b981;
+            --accent-red: #ef4444;
+            --border-radius: 12px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "PingFang HK", "Microsoft JhengHei", sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            padding: 20px;
+            line-height: 1.5;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* 數學符號專用格式 */
+        .math {
+            font-family: "Cambria Math", "Georgia", "Times New Roman", serif;
+            font-style: italic;
+            padding: 0 2px;
+        }
+        .math-sym {
+            font-family: "Cambria Math", "Georgia", "Times New Roman", serif;
+            font-style: normal;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 24px;
+            background: linear-gradient(135deg, #3b82f6, #4f46e5);
+            color: white;
+            padding: 24px;
+            border-radius: var(--border-radius);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        header h1 {
+            font-size: 1.8rem;
+            margin-bottom: 8px;
+        }
+
+        header p {
+            opacity: 0.9;
+            font-size: 0.95rem;
+        }
+
+        .param-badges {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin-top: 16px;
+            flex-wrap: wrap;
+        }
+
+        .badge {
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(4px);
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        @media (max-width: 900px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: var(--border-radius);
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            border: 1px solid #e2e8f0;
+            margin-bottom: 20px;
+        }
+
+        .card-title {
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin-bottom: 16px;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        /* 遊戲籌碼與下注區 */
+        .betting-zone {
+            background: #eef2ff;
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            border: 1px dashed var(--primary);
+        }
+
+        .chips-display {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #d97706;
+            margin-bottom: 10px;
+        }
+
+        .bet-options {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .bet-btn {
+            flex: 1;
+            padding: 10px;
+            border: 2px solid #cbd5e1;
+            background: white;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .bet-btn.active {
+            border-color: var(--primary);
+            background: #e0e7ff;
+            color: var(--primary);
+        }
+
+        /* 按鈕區 */
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+
+        .btn {
+            padding: 10px 18px;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.1s;
+        }
+
+        .btn:active {
+            transform: scale(0.97);
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-hover);
+        }
+
+        .btn-secondary {
+            background: var(--secondary);
+            color: white;
+        }
+
+        .btn-danger {
+            background: var(--accent-red);
+            color: white;
+        }
+
+        /* 抽取視覺卡牌區 */
+        .draw-display {
+            min-height: 120px;
+            background: #f1f5f9;
+            border-radius: 8px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 16px;
+        }
+
+        .cards-container {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .dog-card {
+            width: 65px;
+            height: 90px;
+            background: white;
+            border: 2px solid var(--primary);
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.1rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            animation: popIn 0.3s ease-out;
+        }
+
+        .dog-card span {
+            font-size: 0.75rem;
+            color: #64748b;
+            font-weight: normal;
+        }
+
+        @keyframes popIn {
+            0% { transform: scale(0.5); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .sample-result {
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: var(--text-color);
+        }
+
+        /* 直方圖區 */
+        .chart-container {
+            height: 240px;
+            display: flex;
+            align-items: flex-end;
+            gap: 12px;
+            padding: 20px 10px 30px 10px;
+            border-bottom: 2px solid #cbd5e1;
+            position: relative;
+            margin-bottom: 16px;
+        }
+
+        .bar-wrapper {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100%;
+            justify-content: flex-end;
+            position: relative;
+        }
+
+        .bar-count {
+            font-size: 0.85rem;
+            font-weight: bold;
+            margin-bottom: 4px;
+            color: #475569;
+        }
+
+        .bar {
+            width: 100%;
+            background: linear-gradient(180deg, #818cf8, #4f46e5);
+            border-radius: 4px 4px 0 0;
+            transition: height 0.3s ease;
+            min-height: 2px;
+        }
+
+        .bar-label {
+            position: absolute;
+            bottom: -25px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #334155;
+        }
+
+        /* 數據比較表 */
+        .stats-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.95rem;
+        }
+
+        .stats-table th, .stats-table td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .stats-table th {
+            background-color: #f8fafc;
+            color: #64748b;
+            font-weight: 600;
+        }
+
+        .highlight-val {
+            font-weight: bold;
+            color: var(--primary);
+        }
+
+        /* 理論推導展開區 */
+        .theory-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            font-size: 0.9rem;
+        }
+
+        .theory-table th, .theory-table td {
+            border: 1px solid #cbd5e1;
+            padding: 8px;
+            text-align: center;
+        }
+
+        .theory-table th {
+            background-color: #f1f5f9;
+        }
+
+        .collapsible {
+            background-color: #f8fafc;
+            color: var(--text-color);
+            cursor: pointer;
+            padding: 12px;
+            width: 100%;
+            border: 1px solid #e2e8f0;
+            text-align: left;
+            outline: none;
+            font-size: 1rem;
+            font-weight: 600;
+            border-radius: 6px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .collapsible:after {
+            content: '\02795';
+            font-size: 12px;
+        }
+
+        .active:after {
+            content: "\2796";
+        }
+
+        .content {
+            padding: 0 12px;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.2s ease-out;
+            background-color: white;
+        }
+
+        .feedback-text {
+            font-size: 0.95rem;
+            font-weight: bold;
+            margin-top: 6px;
+        }
+
+        .text-green { color: var(--accent-green); }
+        .text-red { color: var(--accent-red); }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>🐶 神機妙算：狗狗體重抽樣大決戰</h1>
+        <p>中六級數學延伸部分單元一 (M1) —— 課堂活動 13.1 互動教學系統</p>
+        <div class="param-badges">
+            <div class="badge">狗狗總體：{ 1.1 kg, 1.5 kg, 1.9 kg }</div>
+            <div class="badge">總體平均值 (<span class="math">μ</span>) = 1.50 kg</div>
+            <div class="badge">總體方差 (<span class="math">σ</span>²) = 0.1067 kg²</div>
+        </div>
+    </header>
+
+    <div class="grid">
+        <!-- 左側：互動抽樣區與下注遊戲 -->
+        <div>
+            <div class="card">
+                <div class="card-title">
+                    <span>1. 賭神競猜區 (獨眼賭客)</span>
+                    <span style="font-size:0.85rem; font-weight:normal; color:#64748b;">籌碼體驗隨機波動</span>
+                </div>
+
+                <div class="betting-zone">
+                    <div class="chips-display">💰 你的籌碼：<span id="chips-count">100</span> 分</div>
+                    <p style="font-size: 0.9rem; margin-bottom: 8px; color:#475569;">預測：你「下一次抽樣」算出的樣本平均值 <span class="math">x̄</span> 會等於總體平均值 1.5 嗎？</p>
+                    <div class="bet-options">
+                        <button class="bet-btn active" id="bet-equal" onclick="selectBet('equal')">恰好等於 1.5 (賠率 1:2)</button>
+                        <button class="bet-btn" id="bet-not-equal" onclick="selectBet('not-equal')">不等於 1.5 (賠率 1:1)</button>
+                    </div>
+                </div>
+
+                <div style="margin-bottom: 12px; display: flex; align-items: center; gap: 10px;">
+                    <label for="sample-size-select" style="font-weight: 600; font-size: 0.95rem;">樣本容量 (<span class="math">n</span>)：</label>
+                    <select id="sample-size-select" onchange="changeSampleSize()" style="padding: 6px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-weight: bold;">
+                        <option value="2" selected>n = 2 (課堂活動 13.1 標準)</option>
+                        <option value="3">n = 3</option>
+                        <option value="5">n = 5</option>
+                        <option value="10">n = 10</option>
+                    </select>
+                </div>
+
+                <div class="controls">
+                    <button class="btn btn-primary" onclick="runSampling(1)">🎲 抽樣 1 次 (下注)</button>
+                    <button class="btn btn-secondary" onclick="runSampling(10)">⚡ 快速抽樣 10 次</button>
+                    <button class="btn btn-secondary" onclick="runSampling(100)">🚀 快速抽樣 100 次</button>
+                    <button class="btn btn-danger" onclick="resetData()">🔄 重置所有數據</button>
+                </div>
+
+                <div class="draw-display">
+                    <div class="cards-container" id="cards-box">
+                        <div style="color: #94a3b8; font-size: 0.9rem;">按下「抽樣 1 次」開始遊戲</div>
+                    </div>
+                    <div class="sample-result" id="sample-result-text">---</div>
+                    <div class="feedback-text" id="bet-feedback"></div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">💡 課堂導引與提問</div>
+                <ul style="padding-left: 20px; font-size: 0.95rem; color: #334155;">
+                    <li style="margin-bottom: 8px;"><b>思考 1：</b> 為什麼單次抽樣算出的 <span class="math">x̄</span> 常常不等於 <span class="math">μ</span> = 1.5？（因為 <span class="math">X̄</span> 是隨機變量！）</li>
+                    <li style="margin-bottom: 8px;"><b>思考 2：</b> 當全班抽樣 100 次後，<span class="math">x̄</span> 的實測平均值 <span class="math">E(X̄)</span> 是否靠近 1.5？</li>
+                    <li><b>思考 3：</b> 將樣本容量 <span class="math">n</span> 從 2 改為 10 時，直方圖的形狀與方差發生了什麼變化？</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- 右側：直方圖與數據分析 -->
+        <div>
+            <div class="card">
+                <div class="card-title">
+                    <span>2. 全班樣本平均值 <span class="math">x̄</span> 抽樣分佈圖</span>
+                    <span style="font-size:0.85rem; font-weight:normal; color:#64748b;">總抽樣次數：<b id="total-draws-count">0</b> 次</span>
+                </div>
+
+                <div class="chart-container" id="chart-box">
+                    <!-- 動態生成柱狀圖 -->
+                </div>
+
+                <table class="stats-table">
+                    <thead>
+                        <tr>
+                            <th>統計量</th>
+                            <th>實測值 (全班累積)</th>
+                            <th>理論值 (公式推導)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>平均值 <span class="math">E(X̄)</span></td>
+                            <td class="highlight-val" id="obs-mean">--</td>
+                            <td><span class="math">μ</span> = <b>1.5000</b></td>
+                        </tr>
+                        <tr>
+                            <td>方差 <span class="math">Var(X̄)</span></td>
+                            <td class="highlight-val" id="obs-var">--</td>
+                            <td><span class="math">σ</span>² / <span class="math">n</span> = <b><span id="theory-var-text">0.0533</span></b></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- 可折疊理論表格區 -->
+            <button class="collapsible" onclick="toggleTheory()">📖 查看理論分佈對照表 (n=2 所有 9 種可能)</button>
+            <div class="content" id="theory-content">
+                <table class="theory-table">
+                    <thead>
+                        <tr>
+                            <th><span class="math">x</span>₁</th>
+                            <th><span class="math">x</span>₂</th>
+                            <th>樣本平均值 <span class="math">x̄</span></th>
+                            <th>概率 <span class="math">P(X̄ = x̄)</span></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>1.1</td><td>1.1</td><td>1.10</td><td>1/9</td></tr>
+                        <tr><td>1.1</td><td>1.5</td><td>1.30</td><td rowspan="2">2/9 (共 2 種)</td></tr>
+                        <tr><td>1.5</td><td>1.1</td><td>1.30</td></tr>
+                        <tr><td>1.1</td><td>1.9</td><td>1.50</td><td rowspan="3">3/9 (共 3 種)</td></tr>
+                        <tr><td>1.5</td><td>1.5</td><td>1.50</td></tr>
+                        <tr><td>1.9</td><td>1.1</td><td>1.50</td></tr>
+                        <tr><td>1.5</td><td>1.9</td><td>1.70</td><td rowspan="2">2/9 (共 2 種)</td></tr>
+                        <tr><td>1.9</td><td>1.5</td><td>1.70</td></tr>
+                        <tr><td>1.9</td><td>1.9</td><td>1.90</td><td>1/9</td></tr>
+                    </tbody>
+                </table>
+                <p style="font-size:0.85rem; color:#64748b; margin-top:8px;">
+                    理論驗證：<br>
+                    <span class="math">E(X̄)</span> = 1.1(1/9) + 1.3(2/9) + 1.5(3/9) + 1.7(2/9) + 1.9(1/9) = <b>1.5</b><br>
+                    <span class="math">Var(X̄)</span> = <span class="math">σ</span>² / 2 = 0.10667 / 2 = <b>0.05333</b>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const population = [1.1, 1.5, 1.9];
+    const popMean = 1.5;
+    const popVar = 0.32 / 3; // ~0.1066667
+
+    let sampleSize = 2;
+    let chips = 100;
+    let selectedBet = 'equal';
+    let sampleMeansHistory = [];
+    let countsMap = {};
+
+    function initBins() {
+        countsMap = {};
+        if (sampleSize === 2) {
+            [1.1, 1.3, 1.5, 1.7, 1.9].forEach(v => countsMap[v.toFixed(2)] = 0);
+        } else {
+            // 自動生成可能的平均值 bin
+            for (let v = 1.1; v <= 1.91; v += 0.05) {
+                let key = v.toFixed(2);
+                countsMap[key] = 0;
+            }
+        }
+    }
+
+    function selectBet(type) {
+        selectedBet = type;
+        document.getElementById('bet-equal').classList.toggle('active', type === 'equal');
+        document.getElementById('bet-not-equal').classList.toggle('active', type === 'not-equal');
+    }
+
+    function changeSampleSize() {
+        sampleSize = parseInt(document.getElementById('sample-size-select').value);
+        document.getElementById('theory-var-text').innerText = (popVar / sampleSize).toFixed(4);
+        resetData();
+    }
+
+    function runSampling(times) {
+        let lastResult = null;
+        for (let i = 0; i < times; i++) {
+            let sample = [];
+            let sum = 0;
+            for (let j = 0; j < sampleSize; j++) {
+                let val = population[Math.floor(Math.random() * population.length)];
+                sample.push(val);
+                sum += val;
+            }
+            let mean = parseFloat((sum / sampleSize).toFixed(2));
+            sampleMeansHistory.push(mean);
+            
+            let key = mean.toFixed(2);
+            if (countsMap[key] !== undefined) {
+                countsMap[key]++;
+            } else {
+                countsMap[key] = 1;
+            }
+            lastResult = { sample, mean };
+        }
+
+        // 下注邏輯（僅在單次抽樣時計算）
+        if (times === 1 && lastResult) {
+            updateChipsAndFeedback(lastResult.mean);
+        } else {
+            document.getElementById('bet-feedback').innerText = `已快速模擬 ${times} 次抽樣！`;
+            document.getElementById('bet-feedback').className = "feedback-text";
+        }
+
+        // 更新 UI
+        if (lastResult) {
+            renderCards(lastResult.sample);
+            document.getElementById('sample-result-text').innerHTML = `本次樣本平均值 <span class="math">x̄</span> = <b>${lastResult.mean.toFixed(2)}</b> kg`;
+        }
+        updateChartAndStats();
+    }
+
+    function updateChipsAndFeedback(mean) {
+        const isEqual = Math.abs(mean - 1.5) < 0.001;
+        let win = false;
+        let reward = 0;
+
+        if (selectedBet === 'equal' && isEqual) {
+            win = true;
+            reward = 20;
+        } else if (selectedBet === 'not-equal' && !isEqual) {
+            win = true;
+            reward = 10;
+        } else {
+            win = false;
+            reward = -10;
+        }
+
+        chips += reward;
+        document.getElementById('chips-count').innerText = chips;
+
+        const feedbackEl = document.getElementById('bet-feedback');
+        if (win) {
+            feedbackEl.innerText = `🎉 猜對了！籌碼 +${reward} 分`;
+            feedbackEl.className = "feedback-text text-green";
+        } else {
+            feedbackEl.innerText = `❌ 猜錯了！籌碼 ${reward} 分`;
+            feedbackEl.className = "feedback-text text-red";
+        }
+    }
+
+    function renderCards(sample) {
+        const container = document.getElementById('cards-box');
+        container.innerHTML = '';
+        sample.forEach((val, idx) => {
+            const card = document.createElement('div');
+            card.className = 'dog-card';
+            card.innerHTML = `${val} <span><span class="math">X</span><sub>${idx+1}</sub>(kg)</span>`;
+            container.appendChild(card);
+        });
+    }
+
+    function updateChartAndStats() {
+        const totalDraws = sampleMeansHistory.length;
+        document.getElementById('total-draws-count').innerText = totalDraws;
+
+        // 清空並繪製柱狀圖
+        const chartBox = document.getElementById('chart-box');
+        chartBox.innerHTML = '';
+
+        let maxCount = 0;
+        let keys = Object.keys(countsMap).sort((a,b) => parseFloat(a) - parseFloat(b));
+        
+        // 過濾只顯示有數據的 bin 或預設 bin
+        let activeKeys = keys.filter(k => countsMap[k] > 0 || sampleSize === 2);
+        activeKeys.forEach(k => { if(countsMap[k] > maxCount) maxCount = countsMap[k]; });
+
+        activeKeys.forEach(k => {
+            let count = countsMap[k];
+            let heightPct = maxCount > 0 ? (count / maxCount) * 80 : 0;
+
+            let barWrapper = document.createElement('div');
+            barWrapper.className = 'bar-wrapper';
+            barWrapper.innerHTML = `
+                <div class="bar-count">${count > 0 ? count : ''}</div>
+                <div class="bar" style="height: ${heightPct}%;"></div>
+                <div class="bar-label">${parseFloat(k).toFixed(2)}</div>
+            `;
+            chartBox.appendChild(barWrapper);
+        });
+
+        // 計算實測 E(X̄) 和 Var(X̄)
+        if (totalDraws > 0) {
+            let sum = sampleMeansHistory.reduce((a, b) => a + b, 0);
+            let obsMean = sum / totalDraws;
+
+            let varSum = sampleMeansHistory.reduce((a, b) => a + Math.pow(b - obsMean, 2), 0);
+            let obsVar = totalDraws > 1 ? varSum / totalDraws : 0;
+
+            document.getElementById('obs-mean').innerText = obsMean.toFixed(4);
+            document.getElementById('obs-var').innerText = obsVar.toFixed(4);
+        } else {
+            document.getElementById('obs-mean').innerText = '--';
+            document.getElementById('obs-var').innerText = '--';
+        }
+    }
+
+    function resetData() {
+        sampleMeansHistory = [];
+        initBins();
+        document.getElementById('cards-box').innerHTML = '<div style="color: #94a3b8; font-size: 0.9rem;">按下「抽樣 1 次」開始遊戲</div>';
+        document.getElementById('sample-result-text').innerText = '---';
+        document.getElementById('bet-feedback').innerText = '';
+        updateChartAndStats();
+    }
+
+    function toggleTheory() {
+        const btn = document.querySelector('.collapsible');
+        btn.classList.toggle('active');
+        const content = document.getElementById('theory-content');
+        if (content.style.maxHeight) {
+            content.style.maxHeight = null;
+        } else {
+            content.style.maxHeight = content.scrollHeight + "px";
+        }
+    }
+
+    // 初始化
+    initBins();
+    updateChartAndStats();
+</script>
+</body>
+</html>
